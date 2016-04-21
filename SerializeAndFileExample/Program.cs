@@ -11,57 +11,46 @@ namespace SerializeAndFileExample
 {
     class Program
     {
-        static string path = "DataInJson.json";
-        static string sharedPath = @"S:\C-16-01\DATA\VasiliyJson.gz";
         static void Main(string[] args)
         {
-            Person p = new Person() { FirstName = "Petr", LastName = "Ivanov" };
-            SerializableToJson(p);
-            //WriteToZipAsync();
-            var p2 = DeSerializableToJson();
-            Console.WriteLine(p2.FirstName + " " + p2.LastName);
-            var files = GetArchives();
-            foreach (var item in files)
-            {
-                Console.WriteLine(item);
-            }
-            Console.ReadKey();
-        }
-        static void SerializableToJson(Person person)
-        {
-            using (FileStream fs= new FileStream(path, FileMode.Create))
-            {
-                DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(Person));
-                ser.WriteObject(fs, person);
-            }
-        }
+            int count = 0;
+            string path = "DataInJson.json";
+            string sharedPath = @"S:\C-16-01\DATA\VasiliyJson.gz";
+            string allSharedPath = @"S:\C-16-01\DATA\";
 
-        static Person DeSerializableToJson()
-        {
-            using (FileStream fs = File.OpenRead(path))// sharedPath or path
+
+            Person p = new Person() { FirstName = "Petr", LastName = "Ivanov" };
+            Person p2 = null;
+            // serialize Person to .json
+            WorkHelper.SerializableToJson(p, path);
+            // compress .json to .gz
+            //WorkHelper.Compress(path, sharedPath);
+            // deserialize from .json to Person
+            //p2 = WorkHelper.DeSerializableToJson(path);
+            
+            #region GetArchives
+            // get .gz archive in shared directory
+            FileInfo[] allCompressedFile = WorkHelper.GetArchives(@"D:\C# work\");
+            foreach (FileInfo file in allCompressedFile)
             {
-                DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(Person));
-                return (Person)ser.ReadObject(fs);
+                Console.WriteLine(count++ + ". " + file.Name);
             }
-        }
-        static string[] GetArchives()
-        {
-            return Directory.GetFiles(@"S:\C-16-01\DATA\");
-        }
-        static void WriteToZipAsync()
-        {
-            using (FileStream fsr = File.OpenRead(path))
-            using (FileStream file = File.Create(sharedPath))
-            using (GZipStream GZipStream = new GZipStream(file, CompressionMode.Compress))
-            {
-                int oneByte = 0;
-                do
-                {
-                    oneByte = fsr.ReadByte();
-                    GZipStream.WriteByte((byte)oneByte);
-                }
-                while (oneByte != -1);
-            }
+            #endregion
+
+            #region Decompress
+            Console.WriteLine("Input number file to decompresed");
+            int number = 0;
+            bool parse = int.TryParse(Console.ReadLine(), out number);
+            string decompressedFile = WorkHelper.Decompress(allCompressedFile[number]);
+            #endregion
+
+            // deserialize decompressedFile .json to Person
+            //p2 = WorkHelper.DeSerializableToJson(decompressedFile);
+
+            // print p2 Person
+            //Console.WriteLine($"firstName is {p2.FirstName}\nLastName is {p2.LastName}");
+            
+            Console.ReadKey();
         }
     }
 }
